@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Timers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .timer-section {
+            margin-top: 20px;
+        }
+        .button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .button:active {
+            background-color: #555;
+        }
+        .time-entry {
+            margin: 10px 0;
+            text-align: center;
+        }
+        .timer {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button class="button" onclick="arrive()">Arrive</button>
+        <button class="button" onclick="leave()">Leave</button>
+    </div>
+    <div id="arrival-time" class="time-entry"></div>
+    <div id="departure-time" class="time-entry"></div>
+
+    <div class="timer-section" id="timers">
+        <div>
+            <button class="button" onclick="startTimer('mainRoom')">Main Room</button>
+            <div id="mainRoom-timer" class="timer">00:00:00:00</div>
+        </div>
+        <div>
+            <button class="button" onclick="startTimer('kitchen')">Kitchen</button>
+            <div id="kitchen-timer" class="timer">00:00:00:00</div>
+        </div>
+        <div>
+            <button class="button" onclick="startTimer('loft')">Loft</button>
+            <div id="loft-timer" class="timer">00:00:00:00</div>
+        </div>
+        <div>
+            <button class="button" onclick="startTimer('bathroom')">Bathroom</button>
+            <div id="bathroom-timer" class="timer">00:00:00:00</div>
+        </div>
+        <div>
+            <button class="button" onclick="startTimer('office')">Office</button>
+            <div id="office-timer" class="timer">00:00:00:00</div>
+        </div>
+    </div>
+
+    <script>
+        let timers = {
+            mainRoom: { time: 0, interval: null },
+            kitchen: { time: 0, interval: null },
+            loft: { time: 0, interval: null },
+            bathroom: { time: 0, interval: null },
+            office: { time: 0, interval: null },
+        };
+
+        function formatTime(time) {
+            const hours = Math.floor(time / 3600000);
+            const minutes = Math.floor((time % 3600000) / 60000);
+            const seconds = Math.floor((time % 60000) / 1000);
+            const nanoseconds = time % 1000;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(nanoseconds).padStart(3, '0')}`;
+        }
+
+        function updateTimerDisplay() {
+            for (const key in timers) {
+                document.getElementById(`${key}-timer`).innerText = formatTime(timers[key].time);
+            }
+        }
+
+        function startTimer(name) {
+            for (const key in timers) {
+                if (timers[key].interval) {
+                    clearInterval(timers[key].interval);
+                    timers[key].interval = null;
+                }
+            }
+            timers[name].interval = setInterval(() => {
+                timers[name].time += 10;
+                updateTimerDisplay();
+                localStorage.setItem('timers', JSON.stringify(timers));
+            }, 10);
+        }
+
+        function arrive() {
+            const now = new Date();
+            const arrivalTime = `Arrival Time: ${now.toLocaleString()}`;
+            document.getElementById('arrival-time').innerText = arrivalTime;
+            localStorage.setItem('arrivalTime', arrivalTime);
+
+            for (const key in timers) {
+                timers[key].time = 0;
+                clearInterval(timers[key].interval);
+                timers[key].interval = null;
+            }
+            updateTimerDisplay();
+            localStorage.setItem('timers', JSON.stringify(timers));
+            localStorage.removeItem('departureTime');
+            document.getElementById('departure-time').innerText = '';
+        }
+
+        function leave() {
+            const now = new Date();
+            const departureTime = `Departure Time: ${now.toLocaleString()}`;
+            document.getElementById('departure-time').innerText = departureTime;
+            localStorage.setItem('departureTime', departureTime);
+
+            for (const key in timers) {
+                if (timers[key].interval) {
+                    clearInterval(timers[key].interval);
+                    timers[key].interval = null;
+                }
+            }
+        }
+
+        window.onload = () => {
+            if (localStorage.getItem('arrivalTime')) {
+                document.getElementById('arrival-time').innerText = localStorage.getItem('arrivalTime');
+            }
+            if (localStorage.getItem('departureTime')) {
+                document.getElementById('departure-time').innerText = localStorage.getItem('departureTime');
+            }
+            if (localStorage.getItem('timers')) {
+                timers = JSON.parse(localStorage.getItem('timers'));
+                updateTimerDisplay();
+            }
+        };
+    </script>
+</body>
+</html>
